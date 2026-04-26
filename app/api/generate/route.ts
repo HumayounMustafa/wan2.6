@@ -18,8 +18,7 @@ export async function POST(req: NextRequest) {
     Authorization: `Bearer ${API_KEY}`,
   };
 
-  // Submit job
-  const submitRes = await fetch(`${ENDPOINT}/run`, {
+  const syncRes = await fetch(`${ENDPOINT}/runsync`, {
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -34,33 +33,30 @@ export async function POST(req: NextRequest) {
     }),
   });
 
-  if (!submitRes.ok) {
-    const text = await submitRes.text();
-    return NextResponse.json({ error: `RunPod error: ${text}` }, { status: submitRes.status });
+  if (!syncRes.ok) {
+    const text = await syncRes.text();
+    return NextResponse.json({ error: `RunPod error: ${text}` }, { status: syncRes.status });
   }
 
-  const { id: jobId } = await submitRes.json();
+  const result = await syncRes.json();
 
-  // Poll until complete (max 10 min)
-  const deadline = Date.now() + 10 * 60 * 1000;
-  while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 4000));
-
-    const pollRes = await fetch(`${ENDPOINT}/status/${jobId}`, { headers });
-    if (!pollRes.ok) continue;
-
-    const result = await pollRes.json();
-    const status: string = result.status;
-
-    if (status === "COMPLETED") {
-      const imageUrl: string = result.output?.result;
-      return NextResponse.json({ imageUrl });
-    }
-
-    if (["FAILED", "CANCELLED", "TIMED_OUT"].includes(status)) {
-      return NextResponse.json({ error: `Job ${status}` }, { status: 500 });
-    }
+  if (["FAILED", "CANCELLED", "TIMED_OUT"].includes(result.status)) {
+    return NextResponse.json({ error: `Job ${result.status}` }, { status: 500 });
   }
 
-  return NextResponse.json({ error: "Timed out waiting for image" }, { status: 504 });
+  const jobId: string = result.id;
+  const statusRes = await fetch(`${ENDPOINT}/status/${jobId}`, { headers });
+
+  if (!statusRes.ok) {
+    return NextResponse.json({ error: "Failed to fetch job status" }, { status: statusRes.status });
+  }
+
+  const statusResult = await statusRes.json();
+  const imageUrl: string = statusResult.output?.result ?? result.output?.result;
+
+  if (!imageUrl) {
+    return NextResponse.json({ error: "No image in response" }, { status: 500 });
+  }
+
+  return NextResponse.json({ imageUrl });
 }
