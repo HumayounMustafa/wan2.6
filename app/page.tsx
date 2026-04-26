@@ -130,11 +130,15 @@ export default function Home() {
         </div>
 
         {/* Preview panel */}
-        <div className="flex-1 flex items-center justify-center p-6 md:p-8 bg-[#07070c] min-h-[320px]">
-          {status === "idle" && !imageUrl && <EmptyState />}
+        <div className="flex-1 flex flex-col p-6 md:p-8 bg-[#07070c] min-h-[320px] md:overflow-y-auto">
+          {status === "idle" && !imageUrl && (
+            <div className="m-auto">
+              <EmptyState />
+            </div>
+          )}
 
           {status === "loading" && (
-            <div className="flex flex-col items-center gap-4 text-white/30">
+            <div className="m-auto flex flex-col items-center gap-4 text-white/30">
               <PulsingGrid />
               <p className="text-sm">Generating your image…</p>
               <p className="text-xs text-white/20">This usually takes 15–60 seconds</p>
@@ -142,11 +146,11 @@ export default function Home() {
           )}
 
           {status === "done" && imageUrl && (
-            <div className="flex flex-col items-center gap-4 max-w-2xl w-full">
+            <div className="m-auto flex flex-col items-center gap-4 max-w-2xl w-full py-2">
               <img
                 src={imageUrl}
                 alt="Generated"
-                className="w-full rounded-2xl shadow-2xl shadow-black/60 border border-white/[0.06]"
+                className="w-auto h-auto max-w-full rounded-2xl shadow-2xl shadow-black/60 border border-white/[0.06] md:max-h-[calc(100vh-14rem)]"
               />
               <a
                 href={imageUrl}
@@ -164,7 +168,7 @@ export default function Home() {
           )}
 
           {status === "error" && (
-            <div className="flex flex-col items-center gap-3 text-white/30">
+            <div className="m-auto flex flex-col items-center gap-3 text-white/30">
               <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-red-400/60">
                   <circle cx={12} cy={12} r={10} /><path d="M12 8v4M12 16h.01" strokeLinecap="round" />
